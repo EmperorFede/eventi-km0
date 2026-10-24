@@ -55,6 +55,10 @@ android {
         release {
             // Senza key.properties si firma con la chiave di debug (solo per prove sul PC).
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            // Niente ottimizzazione R8: shared_preferences chiama il codice Kotlin via JNI e R8
+            // lo rinomina o lo toglie (l'app si bloccava all'avvio). Per un'app personale va bene così.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
