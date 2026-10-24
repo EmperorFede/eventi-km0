@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sfondo scuro dell'app, usato anche nella schermata di avvio. -->
+    <color name="sfondo_avvio">#121212</color>
+</resources>
