@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../state/archivio_eventi.dart';
 
-/// Riga sopra la lista: esempi, ricerca in corso, errore o ultimo aggiornamento.
+/// Riga sopra la lista: ricerca in corso, errore o ultimo aggiornamento.
 class StatoSezione extends StatelessWidget {
   const StatoSezione({
     super.key,
     required this.sezione,
-    required this.usaEsempi,
     required this.onAggiorna,
   });
 
   final Sezione sezione;
-  final bool usaEsempi;
   final VoidCallback onAggiorna;
 
   @override
@@ -37,13 +35,6 @@ class StatoSezione extends StatelessWidget {
           ),
         );
 
-    if (usaEsempi) {
-      return riquadro(
-        Icons.info_outline,
-        schema.primary,
-        'Questi sono eventi di esempio. Aggiungi la chiave IA in Stile per cercare quelli veri.',
-      );
-    }
     if (sezione.inCaricamento) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),

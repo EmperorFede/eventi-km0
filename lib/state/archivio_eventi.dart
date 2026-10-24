@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../data/eventi_esempio.dart';
 import '../models/evento.dart';
 import '../services/ricerca_ia.dart';
 import 'app_state.dart';
@@ -51,7 +50,11 @@ class ArchivioEventi extends ChangeNotifier {
       for (final j in (jsonDecode(_prefs.getString('salvati_eventi') ?? '[]') as List))
         Evento.fromJson(j as Map<String, dynamic>),
     ];
-    _salvati = {for (final e in salvati) e.id: e};
+    // La versione 1.0.0 aveva eventi di esempio (id "v1", "i2"…): se erano stati salvati, si tolgono.
+    _salvati = {
+      for (final e in salvati)
+        if (!RegExp(r'^[vi]\d$').hasMatch(e.id)) e.id: e,
+    };
     _stato.addListener(aggiornaSeServe);
     aggiornaSeServe();
   }
@@ -70,15 +73,14 @@ class ArchivioEventi extends ChangeNotifier {
   static const validitaVicino = Duration(hours: 24);
   static const validitaItalia = Duration(days: 7);
 
-  bool get usaEsempi => !_stato.haChiave;
+  /// Senza chiave IA non si possono cercare eventi: l'app mostra come aggiungerla.
+  bool get mancaChiave => !_stato.haChiave;
 
   String get _chiaveZona => '${_stato.zona}|${_stato.raggioKm}';
 
-  List<Evento> get eventiVicino => usaEsempi
-      ? eventiEsempio.where((e) => !e.lontano && e.distanzaKm <= _stato.raggioKm).toList()
-      : _futuri(vicino.eventi);
+  List<Evento> get eventiVicino => mancaChiave ? const [] : _futuri(vicino.eventi);
 
-  List<Evento> get eventiItalia => usaEsempi ? eventiEsempio.where((e) => e.lontano).toList() : _futuri(italia.eventi);
+  List<Evento> get eventiItalia => mancaChiave ? const [] : _futuri(italia.eventi);
 
   List<Evento> get salvati => _futuri(_salvati.values.toList());
 
@@ -92,7 +94,7 @@ class ArchivioEventi extends ChangeNotifier {
 
   /// Rifà le ricerche scadute o fatte per un'altra zona.
   void aggiornaSeServe() {
-    if (usaEsempi) {
+    if (mancaChiave) {
       notifyListeners();
       return;
     }
@@ -121,7 +123,7 @@ class ArchivioEventi extends ChangeNotifier {
 
   /// Domanda libera della schermata Chiedi.
   Future<RisultatoRicerca> chiedi(String domanda) {
-    if (usaEsempi) {
+    if (mancaChiave) {
       throw const ErroreRicerca('Aggiungi la chiave IA nella schermata Stile per fare domande.');
     }
     return _ricerca().chiedi(domanda: domanda, zona: _stato.zona, raggioKm: _stato.raggioKm);
@@ -132,7 +134,7 @@ class ArchivioEventi extends ChangeNotifier {
     String chiavePrefs,
     Future<RisultatoRicerca> Function(RicercaIA r) cerca,
   ) async {
-    if (usaEsempi || s.inCaricamento) return;
+    if (mancaChiave || s.inCaricamento) return;
     final zona = _chiaveZona;
     s
       ..inCaricamento = true
